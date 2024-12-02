@@ -8,3 +8,5 @@ from .models import *
 
 def test(request):
     return HttpResponse("ONLINE ACTION SYSTEM")
+
+
