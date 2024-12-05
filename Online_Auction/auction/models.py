@@ -1,104 +1,124 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 # Create your models here.
 
-class Bidder(models.Model):
-    User = models.CharField(("User"), max_length=50)
-    address = models.CharField(max_length=60)
-    phone_number = models.IntegerField()
-    bidding_limit = models.DecimalField(("Bidding Limit"), max_digits=5, decimal_places=2)
+class user_profile(models.Model):
+    user_roles = (
+        ('auctioner', 'Auctioner'),
+        ('bidder', 'Bidder'),
+    )
+
+    user = models.OneToOneField(User, verbose_name=("User"), on_delete=models.CASCADE)
+    role = models.CharField(("Role"), max_length=50, choices=user_roles)
+    address = models.CharField(("Address"), max_length=50)
+    business_name = models.CharField(("Business Name"), max_length=50, blank=True, null=True)
+    verified = models.BooleanField(("verified"), default=False)
 
 
-class Result(models.Model):
-    name = models.CharField(max_length=60)
-    product = models.ForeignKey("auction.Product", verbose_name=("Product"), on_delete=models.CASCADE)
-    winning_bid = models.DecimalField(("The Winning Bid"), max_digits=5, decimal_places=2)
-    winner = models.ForeignKey("auction.Bidder", verbose_name=("Winner"), on_delete=models.CASCADE)
-    auction_end_time = models.DateTimeField()
-
-class Payment(models.Model):
-    payment_id = models.CharField(("Payment Identity"), max_length=50)
-    bidder = models.ForeignKey("auction.Bidder", verbose_name=("Bidder"), on_delete=models.CASCADE)
-    amount = models.DecimalField(("Amount"), max_digits=5, decimal_places=2)
-    payment_date = models.DateTimeField()
-    status = models.CharField(("pending , completed"), max_length=50)
-
-
-class Member_fee(models.Model):
-    auction_user = models.ForeignKey("auction.Auction_User", verbose_name=("Auction User"), on_delete=models.CASCADE)
-    fee_amount = models.DecimalField(("Amount"), max_digits=5, decimal_places=2)
-    due_date = models.DateTimeField()
-    status = models.CharField(("Status"), max_length=50)
-
-
-
-class Status(models.Model):
-    name = models.CharField(max_length=60)
-    description = models.TextField()
-
-
-
-class Send_Feedback(models.Model):
-    user = models.ForeignKey("auction.Bidder", verbose_name=("User"), on_delete=models.CASCADE)
-    message = models.TextField()
-    rating = models.IntegerField()
-    created_at = models.DateTimeField()
-
-
-
-class Auction_User(models.Model):
-   user = models.OneToOneField("auction.Bidder", verbose_name=("User"), on_delete=models.CASCADE)
-   is_verified = models.BooleanField()
-   profile_picture = models.ImageField()
-   join_date = models.DateTimeField()
-
-
-class Category(models.Model):
-    name = models.CharField(max_length=60)
-    description = models.TextField()
-
-
-
-class Sub_Category(models.Model):
-    Name = models.CharField(max_length=60)
-    category = models.ForeignKey("auction.Category", verbose_name=("Category"), on_delete=models.CASCADE)
-    description = models.TextField()
-
-
-class Session_date(models.Model):
-    Date = models.DateField(max_length=60)
-    is_holiday = models.BooleanField()
-
-
-
-class Session_Time(models.Model):
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    timezone = models.CharField(("Current Zone"), max_length=50)
-
-
-class Product(models.Model):
-    name = models.CharField(max_length=60)
-    description = models.TextField()
-    starting_bid = models.DecimalField(("Start Bid"), max_digits=5, decimal_places=2)
-    category = models.ForeignKey("auction.Category", verbose_name=("Category"), on_delete=models.CASCADE)
-    subcategory = models.ForeignKey("auction.Sub_Category", verbose_name=("Sub Category"), on_delete=models.CASCADE)
-    image = models.ImageField(("Product Image"), upload_to=None, height_field=None, width_field=None, max_length=None)
-
+    def __str__(self):
+        return f"{self.user.username} - {self.role}"
     
 
 
-class Aucted_Product(models.Model):
-    product = models.ForeignKey("auction.Product", verbose_name=("Product"), on_delete=models.CASCADE)
-    winner = models.ForeignKey("auction.Bidder", verbose_name=("Winner"), on_delete=models.CASCADE)
-    final_bid = models.DecimalField(("Final Bid"), max_digits=5, decimal_places=2)
-    auction_date = models.DateTimeField()
+class auction(models.Model):
+    title = models.CharField(("Title"), max_length=50)
+    description = models.TextField(("Description"))
+    starting_price = models.DecimalField(("Start-Price"), max_digits=5, decimal_places=2)
+    created_at = models.DateTimeField(("Created At"), auto_now=False, auto_now_add=True)
+    start_date = models.DateTimeField(("Start Date"), auto_now=False, auto_now_add=True)
+    end_date = models.DateTimeField(("End Date"), auto_now=False, auto_now_add=False)
+    owner = models.ForeignKey("auction.user_profile", verbose_name=("Owner"), on_delete=models.CASCADE)
+    is_active = models.BooleanField(("Online"), default=True)
+
+
+    def __str__(self):
+        return self.title
+    
+
+class bid(models.Model):
+    auction = models.ForeignKey("auction.auction", verbose_name=("Auction"), on_delete=models.CASCADE)
+    bidder = models.ForeignKey("auction.user_profile", verbose_name=("Bidder"), on_delete=models.CASCADE)
+    bid_amount = models.DecimalField(("Bid-Amount"), max_digits=5, decimal_places=2)
+    submited_at = models.DateTimeField(("Submitted At"), auto_now=False, auto_now_add=True)
+
+
+    def __str__(self):
+        return (
+            f"{self.bidder.user.username}"
+            f"{self.auction.title}"
+            f"{self.bid_amount}"
+        )
+    
+
+
+class watchlist(models.Model):
+    user = models.ForeignKey("auction.user_profile", verbose_name=(""), on_delete=models.CASCADE)
+    auction = models.ForeignKey("auction.auction", verbose_name=(""), on_delete=models.CASCADE)
+    added_at = models.DateTimeField((""), auto_now=False, auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.user.username} - {self.auction.title}"
+    
+
+
+class payment(models.Model):
+    auction = models.OneToOneField("auction.auction", verbose_name=(""), on_delete=models.CASCADE)
+    bidder = models.ForeignKey("auction.user_profile", verbose_name=(""), on_delete=models.CASCADE)
+    amount = models.DecimalField((""), max_digits=5, decimal_places=2)
+    payment_date = models.DateTimeField((""), auto_now=False, auto_now_add=True)
+    status = models.CharField((""), max_length=50, choices=(('pending','Pending'), ('completed', 'Completed')))
+
+    def __str__(self):
+        return f"{self.bidder.user.username} - {self.auction.title} - {self.amount}"
+    
+
+
+class review(models.Model):
+    reviewer = models.ForeignKey("auction.user_profile", verbose_name=(""), on_delete=models.CASCADE)
+    reviewed_user = models.ForeignKey("auction.user_profile", verbose_name=(""), on_delete=models.CASCADE, related_name = 'received_reviews')
+    rating = models.IntegerField((""), choices=(('1','1'), ('2','2'), ('3','3'),('4','4'),('5','5')))
+    comment = models.TextField((""))
+    created_at = models.DateTimeField((""), auto_now=False, auto_now_add=False)
+
+    def __str__(self):
+        return f"{self.reviewer.user.username} -> {self.reviewed_user.user.username} - {self.rating}"
+    
+
+class notification(models.Model):
+    user = models.ForeignKey("auction.user_profile", verbose_name=(""), on_delete=models.CASCADE)
+    message = models.TextField((""))
+    is_read = models.BooleanField((""), default=False)
+    created_at = models.DateTimeField((""), auto_now=False, auto_now_add=True)
+
+
+    def __str__(self):
+        return f"{self.user.user.username} - {self.message[:20]}"
+    
+
+
+class message(models.Model):
+    sender = models.ForeignKey("auction.user_profile", verbose_name=(""), on_delete=models.CASCADE)
+    receiver = models.ForeignKey("auction.user_profile", verbose_name=("Reciever"), on_delete=models.CASCADE, related_name = 'received text')
+    message = models.TextField((""))
+    sent_at = models.DateTimeField((""), auto_now=False, auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.sender.user.username} -> {self.receiver.user.username}"
+    
+
+
+class escrow(models.Model):
+    auction = models.OneToOneField("auction.auction", verbose_name=(""), on_delete=models.CASCADE, related_name = 'escrow')
+    bidder = models.ForeignKey("auction.user_profile", verbose_name=(""), on_delete=models.CASCADE, related_name='escrows')
+    amount = models.DecimalField((""), max_digits=5, decimal_places=2)
+    release_status = models.BooleanField((""), default=False)
+    created_at = models.DateTimeField((""), auto_now=False, auto_now_add=False)
+
+    def __str__(self):
+        return f"Escrow for:{self.auction.title} - {self.amount}"
+    
 
 
 
-class Participant(models.Model):
-    auction = models.ForeignKey("auction.Product", verbose_name=("Auction"), on_delete=models.CASCADE)
-    bidder = models.ForeignKey("auction.Bidder", verbose_name=("user"), on_delete=models.CASCADE)
-    participation_fee = models.DecimalField(("Activity Fee"), max_digits=5, decimal_places=2)
-    is_active = models.BooleanField()
     
