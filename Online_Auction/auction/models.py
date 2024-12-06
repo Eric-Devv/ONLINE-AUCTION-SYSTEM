@@ -4,6 +4,10 @@ from django.contrib.auth.models import User
 # Create your models here.
 
 class user_profile(models.Model):
+    
+    full_name = models.CharField(("full name"), max_length=50)
+    phone_number = models.IntegerField((""))
+    username = models.CharField(("Username"), max_length=50)
     user_roles = (
         ('auctioner', 'Auctioner'),
         ('bidder', 'Bidder'),
@@ -26,7 +30,7 @@ class auction(models.Model):
     description = models.TextField(("Description"))
     starting_price = models.DecimalField(("Start-Price"), max_digits=5, decimal_places=2)
     created_at = models.DateTimeField(("Created At"), auto_now=False, auto_now_add=True)
-    start_date = models.DateTimeField(("Start Date"), auto_now=False, auto_now_add=True)
+    start_date = models.DateTimeField(("Start Date"), auto_now=False, auto_now_add=False)
     end_date = models.DateTimeField(("End Date"), auto_now=False, auto_now_add=False)
     owner = models.ForeignKey("auction.user_profile", verbose_name=("Owner"), on_delete=models.CASCADE)
     is_active = models.BooleanField(("Online"), default=True)
@@ -99,7 +103,7 @@ class notification(models.Model):
 
 class message(models.Model):
     sender = models.ForeignKey("auction.user_profile", verbose_name=(""), on_delete=models.CASCADE)
-    receiver = models.ForeignKey("auction.user_profile", verbose_name=("Reciever"), on_delete=models.CASCADE, related_name = 'received text')
+    receiver = models.ForeignKey("auction.user_profile", verbose_name=("Reciever"), on_delete=models.CASCADE, related_name='received')
     message = models.TextField((""))
     sent_at = models.DateTimeField((""), auto_now=False, auto_now_add=True)
 

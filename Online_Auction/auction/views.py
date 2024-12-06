@@ -2,10 +2,12 @@ from django.shortcuts import render
 from django.shortcuts import render, redirect
 from .models import *
 from datetime import date
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 from django.forms import ModelForm
 from django.contrib import messages
+from .forms import RegisterForm
 
 
 
@@ -66,7 +68,7 @@ def logout(request):
 def profile(request):
     profile = request.user.profile
     context = {'profile': profile}
-    return render(request, 'profile.html', context )
+    return render(request, './pages/profile.html', context )
 
 
 
@@ -75,7 +77,7 @@ def profile(request):
 
 
 #HOMEPAGE & LISTINGS
-def list_auction(request):
+def list_auctions(request):
     auctions = auction.objects.filter(status = 'active')
     context = {'auctions':auctions}
     return render(request, 'auction_list.html', context)

@@ -1,16 +1,20 @@
 from django import forms
-from django.contrib.auth.models import User
 from .models import user_profile
 
-class RegisterForm(forms.ModelForm):
 
+class RegisterForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput)
     password_confirm = forms.CharField(widget=forms.PasswordInput, label="Confirm password")
 
     class Meta:
-        model = User
+        model = user_profile
 
-        fields = ['username', 'password', 'password_confirm']
+        fields = ['role', 
+                  'username',
+                  'full_name',
+                  'phone_number', 
+                  'password',
+                  'password_confirm']
 
         def clean(self):
             cleaned_data = super().clean()
