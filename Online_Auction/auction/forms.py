@@ -1,31 +1,34 @@
 from django import forms
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
 from .models import user_profile
 
 
-class RegisterForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput)
-    password_confirm = forms.CharField(widget=forms.PasswordInput, label="Confirm password")
+class Custom_user_registration_form(UserCreationForm):
+    email = forms.EmailField(required=True, widget= forms.EmailInput(attrs={'class': 'form-control','placeholder': 'example@gmail.com'}))
+    first_name = forms.CharField(required=True, max_length=30, widget=forms.TextInput(attrs={'class': 'form-control','placeholder': 'Eric'}))
+    last_name = forms.CharField(required=True, max_length=30, widget=forms.TextInput(attrs={'class': 'form-control','placeholder': 'developer'}))
+    role = forms.ChoiceField(choices=user_profile.role, required=True, widget=forms.Select(attrs={'class': 'form-control,'}))
 
     class Meta:
-        model = user_profile
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email', 'password']
 
-        fields = ['role', 
-                  'username',
-                  'full_name',
-                  'phone_number', 
-                  'password',
-                  'password_confirm']
+        def save(self, commit = True):
+            user  = super(). save(commit = False)
+            user.email = self.cleaned_data['email']
+            user.first_name = self.cleaned_data['first_name']
+            user.last_name = self.cleaned_data['last_name']
+            if commit:
+                user.save()
+                user_profile.objects.create(user = user, role = self.cleaned_data['role'])
 
-        def clean(self):
-            cleaned_data = super().clean()
-            password = cleaned_data.get('password')
-            password_confirm = cleaned_data.get('password_confirm')
+            return user
 
-            # Function to check if the password match
 
-            if password and password_confirm and password != password_confirm:
-                raise forms.ValidationError("Passwords do not match!")
+        def clean_email(self):
+            email = self.cleaned_data.get('email')
+            if User.objects.filter(email = email).exists():
+                raise forms.ValidationError("This email is already in use.")
             
-            return cleaned_data
-
-    
+            return email

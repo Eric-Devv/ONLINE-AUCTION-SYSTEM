@@ -4,10 +4,7 @@ from django.contrib.auth.models import User
 # Create your models here.
 
 class user_profile(models.Model):
-    
-    full_name = models.CharField(("full name"), max_length=50)
-    phone_number = models.IntegerField((""))
-    username = models.CharField(("Username"), max_length=50)
+   
     user_roles = (
         ('auctioner', 'Auctioner'),
         ('bidder', 'Bidder'),

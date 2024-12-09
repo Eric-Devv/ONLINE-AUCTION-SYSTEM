@@ -7,8 +7,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 from django.forms import ModelForm
 from django.contrib import messages
-from .forms import RegisterForm
-
+from .forms import Custom_user_registration_form
+from django.http import HttpResponseForbidden
 
 
 
@@ -18,17 +18,17 @@ today=date.today()
 # USER AUTHENTICATION VIEW
 def register(request):
     if request.method == "POST":
-        form = RegisterForm(request.POST)
+        form = Custom_user_registration_form(request.POST)
         if form.is_valid():
            user = form.save()
 
            user_profile.objects.create(user = user, role = 'bidder')
 
-        login(request, user)
-        return redirect('home')
+        login(request, user) # log the user in after succesiful registration
+        return redirect('profile') # redirect to the homepage or another page
     else:
-            form = RegisterForm()
-            return render(request, 'accounts/register.html', {'form':form})
+        form = Custom_user_registration_form()
+    return render(request, 'authentication/register.html', {'form':form})
 
 
 
@@ -49,7 +49,7 @@ def login(request):
         else:
             error_message = "Invalid Credentials"
 
-    return render(request, 'accounts/login.html', {'error':error_message})
+    return render(request, 'authentication/login.html', {'error':error_message})
 
 
 
@@ -59,7 +59,7 @@ def logout(request):
         logout(request)
         return redirect('login')
     else:
-        return redirect('registration/registration.html')
+        return redirect('register')
     
 
 
@@ -68,11 +68,7 @@ def logout(request):
 def profile(request):
     profile = request.user.profile
     context = {'profile': profile}
-    return render(request, './pages/profile.html', context )
-
-
-
-
+    return render(request, 'pages/profile.html', context )
 
 
 
@@ -80,7 +76,7 @@ def profile(request):
 def list_auctions(request):
     auctions = auction.objects.filter(status = 'active')
     context = {'auctions':auctions}
-    return render(request, 'auction_list.html', context)
+    return render(request, 'pages/auction_list.html', context)
 
 
 # AUCTION MANAGEMENT
@@ -88,7 +84,7 @@ def list_auctions(request):
 def auction_detail(request, auction_id):
     auction = get_object_or_404(auction, id = auction_id)
     context = {'auction':auction}
-    return render(request, 'auction_detail.html',context)
+    return render(request, 'pages/auction_detail.html',context)
 
 
 
@@ -111,7 +107,7 @@ def create_auction(request):
     else:
         form = auction_form()
         context = {'form':form}
-        return render (request, 'create_auction.html', context)
+        return render (request, 'pages/create_auction.html', context)
 
 
 
@@ -144,7 +140,21 @@ def place_bid(request, auction_id):
 def my_bids(request):
     bids = bid.objects.filter(bidder = request.user.profile)
     context = {'bids':bids}
-    return render(request, 'my_bids.html', context )
+    return render(request, 'pages/my_bids.html', context )
+
+
+
+# DELETE BID
+@login_required
+def delete_bid (request, bid_id):
+    bid = get_object_or_404(bid, id = bid_id)
+
+    if bid.bidder != request.user.profile:
+        return HttpResponseForbidden("You are not allowed to delete this bid!!")
+    bid.delete()
+    return redirect('my_bids')
+
+
 
 
 #WATCHLIST AND NOTIFICATIONS
@@ -152,7 +162,7 @@ def my_bids(request):
 def notifications(request):
     notifications = request.user.profile.notifications.all()
     context = {"notifications":notifications}
-    return render (request, 'notifications.html', context)
+    return render (request, 'pages/notifications.html', context)
 
 
 #WATCHLIST ADDITION
@@ -169,7 +179,7 @@ def add_to_watchlist(request, auction_id):
 def watchlist(request):
     Watchlist = watchlist.objects.filter(user = request.user.profile)
     context = {'Watchlist':Watchlist}
-    return render(request, 'watchlist.html', context)
+    return render(request, 'pages/watchlist.html', context)
 
 
 
@@ -192,7 +202,7 @@ def payment_checkout(request, auction_id):
         auction.save()
         return redirect('my_bids')
     context = {'auction':auction}
-    return render (request, 'process_payment.html', context)
+    return render (request, 'pages/process_payment.html', context)
 
 
 #REVIEW VIEWS FOR USERS
@@ -216,7 +226,7 @@ def leave_review(request, user_id):
     else:
         form = review_form()
     context = {'form':form, 'reviewed_user': reviewed_user}
-    return render(request, 'leave_review.html', context,)
+    return render(request, 'pages/leave_review.html', context,)
 
 
 
@@ -234,7 +244,7 @@ def admin_dashboard(request):
 
     context = {'auctions':auctions, 'users':users}
 
-    return render(request, 'admin_dashboard.html', context)
+    return render(request, 'admin/admin_dashboard.html', context)
 
 
 #SEARCH AND FILTERING
